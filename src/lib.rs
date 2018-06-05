@@ -450,6 +450,7 @@ pub struct Field {
     pub name: String,
     pub description: Option<String>,
     pub bit_range: BitRange,
+    pub modified_write_values: Option<ModifiedWriteValues>,
     pub access: Option<Access>,
     pub enumerated_values: Vec<EnumeratedValues>,
     pub write_constraint: Option<WriteConstraint>,
@@ -466,6 +467,7 @@ impl Field {
             description: tree.get_child_text("description"),
             bit_range: BitRange::parse(tree),
             access: tree.get_child("access").map(Access::parse),
+            modified_write_values: tree.get_child("modifiedWriteValues").map(ModifiedWriteValues::parse),
             enumerated_values: tree.children
                 .iter()
                 .filter(|t| t.name == "enumeratedValues")
@@ -509,6 +511,49 @@ impl BitRange {
         BitRange {
             offset: start,
             width: end - start + 1,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ModifiedWriteValues {
+    /// write data bit of one shall clear (set to zero) the corresponding bit in the field.
+    OneToClear,
+    /// write data bit of one shall set (set to one) the corresponding bit in the field.
+    OneToSet,
+    /// write data bit of one shall toggle (invert) the corresponding bit in the field.
+    OneToToggle,
+    /// write data bit of zero shall clear (set to zero) the corresponding bit in the field.
+    ZeroToClear,
+    // write data bit of zero shall set (set to one) the corresponding bit in the field./
+    ZeroToSet,
+    /// write data bit of zero shall toggle (invert) the corresponding bit in the field.
+    ZeroToToggle,
+    /// after a write operation all bits in the field are cleared (set to zero).
+    Clear,
+    /// after a write operation all bits in the field are set (set to one).
+    Set,
+    /// after a write operation all bit in the field may be modified (default).
+    Modify,
+}
+
+impl ModifiedWriteValues {
+    fn parse(tree: &Element) -> ModifiedWriteValues {
+        match tree.text.as_ref().map(String::as_ref) {
+            Some("oneToClear") => ModifiedWriteValues::OneToClear,
+            Some("oneToSet") => ModifiedWriteValues::OneToSet,
+            Some("oneToToggle") => ModifiedWriteValues::OneToToggle,
+            Some("zeroToClear") => ModifiedWriteValues::ZeroToClear,
+            Some("zeroToSet") => ModifiedWriteValues::ZeroToSet,
+            Some("zeroToToggle") => ModifiedWriteValues::ZeroToToggle,
+            Some("clear") => ModifiedWriteValues::Clear,
+            Some("set") => ModifiedWriteValues::Set,
+            Some("modify") => ModifiedWriteValues::Modify,
+            x => {
+                println!("Expected one of: oneToClear, oneToSet, oneToToggle, zeroToClear, zeroToSet, zeroToToggle, clear, set, modify");
+                println!("Got {:?}", x);
+                panic!();
+            }
         }
     }
 }
