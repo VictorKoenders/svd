@@ -44,11 +44,11 @@ impl Parse for u32 {
 }
 
 /// Encode trait allows SVD objects to be encoded into XML elements.
-pub trait Encode {
+pub trait Encode<Output = Element> {
     /// Encoding error
     type Error;
     /// Encode into an XML/SVD element
-    fn encode(&self) -> Result<Element, Self::Error>;
+    fn encode(&self) -> Result<Output, Self::Error>;
 }
 
 /// new_element helper to create new xml elements
